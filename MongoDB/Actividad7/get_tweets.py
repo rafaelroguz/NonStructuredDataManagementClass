@@ -7,8 +7,8 @@ import pymongo
 from pymongo import MongoClient
 
 #Creamos una conexión con el servidor
-#client = MongoClient("mongodb://rafael:S7BNKu4WAj2z3ca6@nonstructureddatamanagementclass-shard-00-00-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-01-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-02-xa2lb.mongodb.net:27017/twitter_db?ssl=true&replicaSet=NonStructuredDataManagementClass-shard-0&authSource=admin&retryWrites=true")
-client = MongoClient()
+client = MongoClient("mongodb://<USER><PASSWORD>@nonstructureddatamanagementclass-shard-00-00-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-01-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-02-xa2lb.mongodb.net:27017/twitter_db?ssl=true&replicaSet=NonStructuredDataManagementClass-shard-0&authSource=admin&retryWrites=true")
+#client = MongoClient()
 
 #Nuestra base de datos se llamará "mongo_test"
 db_name = "twitter_db"
@@ -61,10 +61,10 @@ class MyStreamListener(tweepy.StreamListener):
         print(status.text + "\n")
 
 #Datos de acceso a la api. Reemplazar con los propios apenas den autorización
-consumer_key = 'p6zrJN2G2Bpd6xXdmtawwUMPX'
-consumer_secret = 'tEIhvI4eLZoYOESpmghFBUQZk3Od6sZrYFdRRilG7QEGhVC3wP'
-access_token = '940271662959906816-UKsXz4UBQb4RxEJEE4D6H2SX5efFV00'
-access_token_secret = 'fuwOdtyw7zUIh5BrHiJ5c5neMwOAgz72SdwHoQX19cUYK'
+consumer_key = 'y1i3Hhy3GUMOx9jvulw4Y8B1z'
+consumer_secret = 'GG5DsFKTNPKz8PabBDY7a7sbm9gjVlYJqx3y3ifBAGpS5MGEL0'
+access_token = '240873982-qDYkFUqP8WSjD4M0LtBRn9w0ixPMFmvWcuj3lBlg'
+access_token_secret = 'ahVTnCMzhaCBZNyWzRd4agB0eiWB23O92cY1ft6ba6BQy'
 
 #Se realiza la validación con la api
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)

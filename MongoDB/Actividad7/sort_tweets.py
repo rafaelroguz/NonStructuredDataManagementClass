@@ -1,9 +1,16 @@
+#Equipo:
+#Daniel Fernando Baas Colonia
+#Rodrigo Castilla López
+#Luis Gerardo Castillo Pinkus
+#Rafael Rodríguez Guzmán
+
 import pymongo
 from pymongo import MongoClient
+import dateutil.parser
 
 #Creamos una conexión con el servidor
-#client = MongoClient("mongodb://rafael:S7BNKu4WAj2z3ca6@nonstructureddatamanagementclass-shard-00-00-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-01-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-02-xa2lb.mongodb.net:27017/twitter_db?ssl=true&replicaSet=NonStructuredDataManagementClass-shard-0&authSource=admin&retryWrites=true")
-client = MongoClient()
+client = MongoClient("mongodb://<USER><PASSWORD>@nonstructureddatamanagementclass-shard-00-00-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-01-xa2lb.mongodb.net:27017,nonstructureddatamanagementclass-shard-00-02-xa2lb.mongodb.net:27017/twitter_db?ssl=true&replicaSet=NonStructuredDataManagementClass-shard-0&authSource=admin&retryWrites=true")
+#client = MongoClient()
 
 #Nuestra base de datos se llamará "mongo_test"
 db_name = "twitter_db"
@@ -36,8 +43,13 @@ if collection_name in collection_list:
 
 print("La base de datos contiene " + str(tweets_collection.count()) + " tweets!\n")
 
+#Recupar todos los documentos de la bd y los almacena en una variable
+#CUIDADO: Este proceso puede recuperar una cantidad enorme de datos
+def get_all_tweets():
+    return tweets_collection.find()
+
 #Imprime el contenido del tweet recuperado de MongoDB
-def print_tweet(tweet) :
+def print_single_tweet(tweet) :
     print("\nuser_name: " + tweet["user_name"])
     print("date: " + str(tweet["date"]))
     print("language: " + tweet["language"])
@@ -48,24 +60,110 @@ def print_tweet(tweet) :
     print("retweeted: " + str(tweet["retweeted"]))
     print("text: " + tweet["text"])
 
-#Recupar todos los documentos de la bd y los almacena en una variable
-#CUIDADO: Este proceso puede recuperar una cantidad enorme de datos
-def get_all_tweets():
-    return tweets_collection.find()
-
-#Imprimimos todos los tweets de la bd
-def print_all_tweets(tweets):
+#Imprimimos todos los tweets de un conjunto dado
+def print_tweets(tweets):
     for tweet in tweets:
-        print_tweet(tweet)
+        print_single_tweet(tweet)
 
-def posting_devices():
-    tweets = get_all_tweets()
-    language_count = {
-        "lang": "es",
-        "count": 0
+#Recupera los tweets de la db filtrándolos por nombre de usuario
+def print_tweets_by_user(user_name):
+    tweets = tweets_collection.find({"user_name": user_name})
+    
+    for tweet in tweets:
+        print_single_tweet(tweet)
+
+#Imprimimos todos los tweets que contengan en su texto la palabra clave señadala por el usuario
+def print_tweets_by_keyword(keyword, tweets):
+    for tweet in tweets:
+        if keyword in tweet["text"]:
+            print_single_tweet(tweet)
+
+#Lista de todas las aplicaciones desde las que se realizaron los tweets con sus conteos
+source_list = []
+
+#Verifica si la aplicación ya se está contabilizando o es una nueva
+def is_in_source(source):
+    if len(source_list) == 0:
+        return False
+
+    for src in source_list:
+        if source == src["source"]:
+            return True
+    
+    return False
+
+#Incrementamos el contador de tweets para una aplicación
+def increment_source(source):
+    idx = 0
+
+    for src in source_list:
+        if source == src["source"]:
+            source_list[idx]["count"] = source_list[idx]["count"] + 1
+            return True
+
+        idx = idx + 1
+
+    return False
+
+#Añadimos una nueva aplicación a la lista de fuentes de tweets
+def add_source(source):
+    new_src = {
+        "source": source,
+        "count": 1
     }
 
-    #for tweet in tweets:
-        #if device.language in language_count:
+    source_list.append(new_src)
 
-print_all_tweets(get_all_tweets())
+#Imprime la aplicación de origen del tweet y número de tweets que se realizaron con dicha aplicación
+def print_sources():
+    print("\nNúmero de tweets por aplicación de origen: \n")
+
+    for src in source_list:
+        print("Aplicación: " + src["source"])
+        print("Cantidad de tweets: " + str(src["count"]))
+
+#Organiza las aplicaciones desde las que se realizaron los tweets, aumentando el contendo de tweet por aplicación o añadiendo nuevas aplicaciones al conteo
+def print_tweets_by_app(tweets):
+    for tweet in tweets:
+        if not is_in_source(tweet["source"]):
+            add_source(tweet["source"])
+        else:
+            increment_source(tweet["source"])
+
+    print_sources()
+
+#------------------------------------------------------------------------------------
+#Ejecución normal del script
+
+#Recuperamos todos los tweets
+tweets = get_all_tweets()
+
+#print_keyword_tweets("FelizLunes", tweets)
+#print_keyword_tweets("FelizMartes", tweets)
+#print_keyword_tweets("FelizMiercoles", tweets)
+
+print("Bienvenido!\nSelecciona una opción:")
+print("1) Listar todos los tweets")
+print("2) Listar tweets por nombre de usuario")
+print("3) Listar tweets por palabra clave")
+print("4) Mostrar cantidad de tweets por aplicación usada")
+print("5) Salir")
+
+option = input("\nMi opcion: ")
+
+if int(option) == 1:
+    print_tweets(tweets)
+    print()
+elif int(option) == 2:
+    user_name = input("Introduce el nombre de usuario a buscar: ")
+    print_tweets_by_user(user_name)
+    print()
+elif int(option) == 3:
+    keyword = input("Introduce una palabra clave: ")
+    print_tweets_by_keyword(keyword, tweets)
+    print()
+elif int(option) == 4:
+    print_tweets_by_app(tweets)
+    print()
+else:
+    print("Goodbye!")
