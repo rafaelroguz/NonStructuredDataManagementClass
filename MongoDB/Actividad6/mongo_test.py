@@ -7,7 +7,6 @@
 #Importamos la biblioteca de MongoDB para Python
 import pymongo
 from pymongo import MongoClient
-import json
 
 #Imprimimos los datos de la película
 def print_in_screen(json_data):
