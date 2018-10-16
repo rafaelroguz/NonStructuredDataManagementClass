@@ -21,6 +21,7 @@ collection_characters = db["characters"]
 collection_rooms = db["rooms"]
 collection_items = db["items"]
 
+#Esquema del personaje
 character_link = {
   'name': 'Link',
   'character': {
@@ -29,14 +30,15 @@ character_link = {
     'constitution': 1
   },
   'location': {
-    'id': 'room-1',
+    'name': 'room-1',
     'description': "Un vestíbulo vacío. Se ven tres salidas: una al norte, una al este y una al oeste.",
     'exits': {
       'n': 'room-4',
       'e': 'room-2',
       'w': 'room-3'
     },
-    'inventory': []
+    'inventory': [],
+    'players': []
   },
   'rupees': 0,
   'keys': 0,
@@ -46,15 +48,16 @@ character_link = {
     {'name': 'boomerang', 'hand': 'right'}
   ],
   'inventory': [
-    {'qty': 1, 'name': 'bombs', 'bonus': 2},
+    {'qty': 3, 'name': 'bombs', 'bonus': 2},
     {'qty': 1, 'name': 'wooden-sword', 'bonus': 1},
     {'qty': 1, 'name': 'basic-tunic', 'bonus': 0},
     {'qty': 1, 'name': 'boomerang', 'bonus': 1}
   ]
 }
 
+#Esquemas de las habitaciones
 room1 = {
-  'id': 'room-1',
+  'name': 'room-1',
   'description': 'Un vestíbulo vacío. Se ven tres salidas: una al norte, una al este y una al oeste. La puerta norte se encuentra cerrada con llave',
   'exits':{
       'n': 'room-4',
@@ -62,50 +65,56 @@ room1 = {
       'w': 'room-3'
   },
   'inventory': [],
-  'playesr': []
+  'players': [],
+  'open': True
 }
 
 room2 = {
-  'id': 'room-2',
-  'description': 'Al entrar ves un cofre dorado. Contiene una llave',
+  'name': 'room-2',
+  'description': 'Al entrar ves un cofre dorado. La habitación no parece tener ninguna otra salida más que por donde entraste.',
   'exits':{
       'w': 'room-1'
   },
   'inventory': [{'qty': 1, 'name': 'key'}],
-  'players': []
+  'players': [],
+  'open': True
 }
 
 room3 = {
-  'id': 'room-3',
-  'description': 'Al fondo, en una pila de rocas ves un objeto de madera. Es un arco!',
+  'name': 'room-3',
+  'description': 'La habitación está en ruinas. Al fondo puedes ver una pila de rocas.',
   'exits':{
       'e': 'room-1'
   },
   'inventory': [{'qty': 1, 'name': 'bow'}],
-  'players': []
+  'players': [],
+  'open': True
 }
 
 room4 = {
-  'id': 'room-4',
+  'name': 'room-4',
   'description': 'Hay una vasija en la habitación. Tiene 10 rupias!\nVes una salida hacia el norte.',
   'exits':{
       'n': 'room-5',
       's': 'room-1'
   },
   'inventory': [{'qty': 10, 'name': 'rupee'}],
-  'players': []
+  'players': [],
+  'open': True
 }
 
 room5 = {
-  'id': 'room-5',
+  'name': 'room-5',
   'description': 'Al entrar ves una figura enorme. Es un dragón!',
   'exits':{
       's': 'room-4'
   },
   'inventory': [{'qty': 1, 'name': 'triforce_piece'}],
-  'players': []
+  'players': [],
+  'open': True
 }
 
+#Esquemas de los objetos
 boombs = {
   'name': 'bombs',
   'bonus': 2
@@ -137,70 +146,154 @@ rupee = {
 
 #collection_rooms.insert_many([room1, room2, room3, room4, room5])
 #collection_items.insert_many([boombs, bow, boomerang, key, rupee])
+
+#Recuperamos la lista de personajes disponibles
 character_list = collection_characters.find()
 
+#Muestra la información de los personajes en el menú principal
 def print_characters(character_list):
-    for c in character_list:
-        print(c["name"])
-        print(str(c["character"]["health"]))
-        print(c["location"]["id"])
-        print()
+  for c in character_list:
+    print("Jugador: " + c["name"])
+    print("Vidas: " + str(c["character"]["health"]))
+    print("Sala: " + c["location"]["name"])
+    print()
 
-def room1(character):    
-    room = collection_rooms.find_one({"id": "room-1"})
-    room["player"] = True
-    character["location"] = room
-    
-    collection_rooms.update_one({"name": "room-1"}, {"$set":{"player": True}})
-    
-    print(room["description"])
+#Habitación 1. Sirve como un hub para las demás habitaciones
+def room1(player):    
+  #Actualizamos la ubicación del jugador localmente
+  player["location"] = collection_rooms.find_one({"name": "room-1"})
+  #Actualizamos la ubicación del jugador en la bd 
+  collection_characters.update_one({"name": player["name"]}, {"$set": {"location": player["location"]}})
+  #Añadimos al jugador a la lista de jugadores del cuarto
+  collection_rooms.update_one({"name": "room-1"}, {"$push": {"players": player}})
+  
+  print()
+  #Mostramos la descripción del cuarto la cuál nos muestra qué acciones podemos realizar
+  print(player["location"]["description"])
 
-    while True:
-        print("Qué deseas hacer?")
-        print("1) Ir a la sala norte")
-        print("2) Ir a la sala este")
-        print("3) Ir a la sala oeste")
+  #El jugador tiene que introducir una de las opciones o no podrá avanzar
+  while True:
+    print("Qué deseas hacer?\n")
+    print("1) Ir a la sala norte")
+    print("2) Ir a la sala este")
+    print("3) Ir a la sala oeste")
 
-        opt = input("Elige una opción: ")
+    #Recuperamos la opción que el usuario introdujo
+    opcion = input("\nElige una opción: ")
 
-        if int(opt) == 1: 
-            room4(character)
-            collection_rooms.update_one({"name": "room-1"}, {"$set": {"player": False}})
-        elif int(opt) == 2: 
-            room2(character)
-            collection_rooms.update_one({"name": "room-1"}, {"$set": {"player": False}})
-        elif int(opt) == 3: 
-            room3(character)
-            collection_rooms.update_one({"name": "room-1"}, {"$set": {"player": False}})
+    #Probamos que la opción introducida por el usuario sea numérica
+    try:
+      #De acuerdo a la opción que el jugador seleccione será la habitación a la cual se mueva
+      if int(opcion) == 1: 
+        #Como el jugador se movió de la habitación, lo removemos de la lista de jugadores dentro de esa sala
+        collection_rooms.update_one({"name": "room-1"}, {"$pull": {"players": player}})
+        #Ejecutamos el código de la habitación a la cuál el jugador se movió
+        room4(player)
+      elif int(opcion) == 2: 
+        collection_rooms.update_one({"name": "room-1"}, {"$pull": {"players": player}})
+        room2(player)
+      elif int(opcion) == 3: 
+        collection_rooms.update_one({"name": "room-1"}, {"$pull": {"players": player}})
+        room3(player)
+      else:
+        print("\nEsa no es una opción válida!\n")
+    except ValueError:
+      print("\nEsa no es una opción válida!\n")
 
-print("Bienvenido!\n")
+#Habitación 2. El jugador encuentra la llave para abrir la habitación 5
+def room2(player):          
+  #Actualizamos la ubicación del jugador localmente
+  player["location"] = collection_rooms.find_one({"name": "room-2"})
+  #Actualizamos la ubicación del jugador en la bd 
+  collection_characters.update_one({"name": player["name"]}, {"$set": {"location": player["location"]}})
+  #Añadimos al jugador a la lista de jugadores del cuarto
+  collection_rooms.update_one({"name": "room-2"}, {"$push": {"players": player}})
+  
+  print()
+  #Mostramos la descripción del cuarto la cuál nos muestra qué acciones podemos realizar
+  print(player["location"]["description"])
 
+  #El jugador tiene que introducir una de las opciones o no podrá avanzar
+  while True:
+    print("Qué deseas hacer?\n")
+    print("1) Abrir el cofre")
+    print("2) Regresar a la sala anterior")
+
+    #Recuperamos la opción que el usuario introdujo
+    opcion = input("\nElige una opción: ")
+
+    #Probamos que la opción introducida por el usuario sea numérica
+    try:
+      #El usuario decide revisar el cofre y encuentra una llave
+      if int(opcion) == 1: 
+        print("\nTe acercas al cofre y lo abres.")
+
+        #Recuperamos el inventario de la habitación
+        room_inventory = collection_rooms.find_one({"name": "room-2"}, {"inventory": 1})
+        
+        #Si la habitación tiene inventario es que la llave aún no ha sido tomada
+        #NOTA: preguntar por un query donde en vez de obtener una lista de inventary, obtenga sólo si "key" se encuentra o no
+        if room_inventory["inventory"]:
+          print("Encontraste una llave!\n")
+          
+          #Incrementamos el número de llaves que el usuario lleva consigo
+          player["keys"] = int(player["keys"]) + 1
+          
+          #Actualizamos el valor de las llaves que el usuario lleva en la db
+          collection_characters.update_one({"name": player["name"]}, {"$set": {"keys": player["keys"]}})
+          #Actualizamos el valor de las llaves que el usuario en la lista de jugadores del cuarto lleva en la db
+          collection_rooms.update_one({"name": "room-2"}, {"$set": {"players": {"name": "key"}}})
+          
+          #No es óptimo, pero lo que se quiere hacer es actualizar el valor de "location" del jugador en el arreglo de jugadores del cuarto
+          #NOTA: preguntar cómo escribir una query para actualizar sólo el valor de location del jugador en la lista de jugadores del cuarto
+          collection_rooms.update_one({"name": "room-2"}, {"$pull": {"players": player}})
+          collection_rooms.update_one({"name": "room-2"}, {"$push": {"players": player}})
+        else:
+          print("El cofre está vacío\n")
+      elif int(opcion) == 2: 
+        #Como el jugador se movió de la habitación, lo removemos de la lista de jugadores dentro de esa sala
+        collection_rooms.update_one({"name": "room-2"}, {"$pull": {"players": player}})
+        #Ejecutamos el código de la habitación a la cuál el jugador se movió
+        room1(player)
+    except ValueError:
+      print("\nEsa no es una opción válida!\n")
+
+print("Bienvenido!\nEstos son los personajes disponibles:")
+
+#Mostramos la lista de personajes jugables disponibles
 print_characters(character_list)
 
 print("Escriba el nombre del personaje con quien quiere continuar su partida o iniciar una nueva: ")
 
+#Recuperamos el nombre del personaje con el cual el jugador quiere jugar
 name = input("Nombre del personaje: ")
 
-character = collection_characters.find_one({"name": name})
+#Buscamos al personaje en la bd
+player = collection_characters.find_one({"name": name})
 
-print()
-
-if not character:
-    character_link["name"] = name
-    collection_characters.insert_one(character_link)
-    room1(character_link)
+#Si el personaje no existe en la bd, se crea uno nuevo
+if not player:
+  #Se nombra el personaje nuevo de acuerdo al introducido previamente
+  character_link["name"] = name
+  #Se añade el personaje a la bd
+  collection_characters.insert_one(character_link)
+  #Movemos al personaje a la sala 1, ejecutando el código de dicha sala
+  room1(character_link)
+#Si el personaje ya existe, se usa el obtenido de la bd
 else:
-    room_loc = character["location"]["id"]
+  #Se obtiene el nombre de la sala en la que el personaje se encuentra
+  player_location = player["location"]["name"]
 
-    if room_loc == 1:
-        room1(character)
-    elif room_loc == 2:
-        room2(character)
-    elif room_loc == 3:
-        room3(character)
-    elif room_loc == 4:
-        room4(character)
-    elif room_loc == 5:
-        room5(character)
+  #Se mueve el personaje a la sala correspondiente, ejecutándo el código de dicha sala
+  if player_location == "room-1":
+      room1(player)
+  elif player_location == "room-2":
+      room2(player)
+  elif player_location == "room-3":
+      room3(player)
+  elif player_location == "room-4":
+      room4(player)
+  elif player_location == "room-5":
+      room5(player)
 
 #mongodb+srv://rafael:S7BNKu4WAj2z3ca6@nonstructureddatamanagementclass-xa2lb.mongodb.net/admin
