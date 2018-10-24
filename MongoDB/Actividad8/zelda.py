@@ -1,4 +1,4 @@
-#Nuestra colección se llamará "movies"#Equipo:
+#Equipo:
 #Daniel Fernando Baas Colonia
 #Rodrigo Castilla López
 #Luis Gerardo Castillo Pinkus
@@ -157,12 +157,12 @@ character_link = {
   'inventory': [bombs, boomerang, basic_tunic, wooden_sword]
 }
 
-collection_characters.delete_many({})
-collection_items.delete_many({})
-collection_rooms.delete_many({})
+#collection_characters.delete_many({})
+#collection_items.delete_many({})
+#collection_rooms.delete_many({})
 
-collection_rooms.insert_many([room1, room2, room3, room4, room5])
-collection_items.insert_many([bombs, bow, boomerang, key, rupee])
+#collection_rooms.insert_many([room1, room2, room3, room4, room5])
+#collection_items.insert_many([bombs, bow, boomerang, key, rupee])
 
 #Recuperamos la lista de personajes disponibles
 character_list = collection_characters.find()
