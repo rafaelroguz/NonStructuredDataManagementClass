@@ -79,3 +79,5 @@ myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
 
 #Establecemos que los tweets que queremos recibir
 myStream.filter(track=['FelizLunes', 'FelizMartes', 'FelizMiercoles', 'FelizJueves'])
+
+#mongodb+srv://rafael:S7BNKu4WAj2z3ca6@nonstructureddatamanagementclass-xa2lb.mongodb.net/admin
